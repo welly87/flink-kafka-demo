@@ -1,2 +1,6 @@
 *.class
 *.log
+quickstart/target/**
+quickstart/.settings
+quickstart/.classpath
+quickstart/.project
