@@ -47,11 +47,11 @@ object KafkaAvroStreaming {
     val env = StreamExecutionEnvironment.getExecutionEnvironment
 
     val properties = new Properties()
-    properties.setProperty("bootstrap.servers", "localhost:9092")
+    properties.setProperty("bootstrap.servers", "34.87.113.63:9092")
     properties.setProperty("group.id", "test")
 
     val stream = env
-        .addSource(new FlinkKafkaConsumer[PageViews]("sensor2", new PageViewsSerializationSchema(), properties))
+        .addSource(new FlinkKafkaConsumer[PageViews]("telegram", new PageViewsSerializationSchema(), properties))
         .print()
 
     env.execute("Flink Streaming Scala API Skeleton")
