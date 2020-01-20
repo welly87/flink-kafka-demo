@@ -23,20 +23,20 @@ import org.apache.flink.streaming.util.serialization._
 import org.apache.flink.streaming.connectors.kafka._
 import java.util._
 
-import id.dei.PageViews
+import id.dei.{PageViews, TelegramMessage}
 import org.apache.flink.api.common.typeinfo.TypeInformation
 
-class PageViewsSerializationSchema extends DeserializationSchema[PageViews] {
-  override def deserialize(bytes: Array[Byte]): PageViews = {
-    PageViews.getDecoder.decode(bytes)
+class TelegramMessageSerializationSchema extends DeserializationSchema[TelegramMessage] {
+  override def deserialize(bytes: Array[Byte]): TelegramMessage = {
+    TelegramMessage.getDecoder.decode(bytes)
   }
 
-  override def isEndOfStream(t: PageViews): Boolean = {
+  override def isEndOfStream(t: TelegramMessage): Boolean = {
     return false
   }
 
-  override def getProducedType: TypeInformation[PageViews] = {
-    TypeInformation.of(classOf[PageViews])
+  override def getProducedType: TypeInformation[TelegramMessage] = {
+    TypeInformation.of(classOf[TelegramMessage])
   }
 }
 object KafkaAvroStreaming {
@@ -50,7 +50,7 @@ object KafkaAvroStreaming {
     properties.setProperty("group.id", "test")
 
     val stream = env
-        .addSource(new FlinkKafkaConsumer[PageViews]("telegram", new PageViewsSerializationSchema(), properties))
+        .addSource(new FlinkKafkaConsumer[TelegramMessage]("telegram", new TelegramMessageSerializationSchema(), properties))
         .print()
 
     env.execute("Flink Streaming Scala API Skeleton")
