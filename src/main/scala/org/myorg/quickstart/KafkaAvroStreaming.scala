@@ -28,7 +28,6 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 
 class PageViewsSerializationSchema extends DeserializationSchema[PageViews] {
   override def deserialize(bytes: Array[Byte]): PageViews = {
-    println("deserialize")
     PageViews.getDecoder.decode(bytes)
   }
 

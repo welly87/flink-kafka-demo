@@ -4,3 +4,5 @@ quickstart/target/**
 quickstart/.settings
 quickstart/.classpath
 quickstart/.project
+target/
+dependency-reduced-pom.xml
