@@ -23,12 +23,19 @@ import org.apache.flink.streaming.util.serialization._
 import org.apache.flink.streaming.connectors.kafka._
 import java.util._
 
-import id.dei.{PageViews, TelegramMessage}
+import org.apache.avro.io.{DecoderFactory}
+import org.apache.avro.specific.{SpecificDatumReader}
+import id.dei.{TelegramMessage}
 import org.apache.flink.api.common.typeinfo.TypeInformation
 
 class TelegramMessageSerializationSchema extends DeserializationSchema[TelegramMessage] {
   override def deserialize(bytes: Array[Byte]): TelegramMessage = {
-    TelegramMessage.getDecoder.decode(bytes)
+    println("deserialize: " + bytes.length)
+    val reader = new SpecificDatumReader[TelegramMessage](classOf[TelegramMessage])
+    val decoder = DecoderFactory.get.binaryDecoder(bytes, null)
+    val message = reader.read(null, decoder)
+    println(message.getMessage)
+    message
   }
 
   override def isEndOfStream(t: TelegramMessage): Boolean = {
@@ -51,8 +58,9 @@ object KafkaAvroStreaming {
 
     val stream = env
         .addSource(new FlinkKafkaConsumer[TelegramMessage]("telegram", new TelegramMessageSerializationSchema(), properties))
+        // .map(x => x.getMessage)
         .print()
 
-    env.execute("Flink Streaming Scala API Skeleton")
+    env.execute("Flink Telegram Analytics")
   }
 }
