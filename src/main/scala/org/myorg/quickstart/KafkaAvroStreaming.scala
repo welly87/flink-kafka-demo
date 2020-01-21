@@ -23,12 +23,23 @@ import org.apache.flink.streaming.util.serialization._
 import org.apache.flink.streaming.connectors.kafka._
 import java.util._
 
-import org.apache.avro.io.{DecoderFactory}
-import org.apache.avro.specific.{SpecificDatumReader}
+import org.apache.avro.io.{DecoderFactory, EncoderFactory}
+import org.apache.avro.specific.{SpecificDatumReader, SpecificDatumWriter}
 import id.dei.{TelegramMessage}
 import org.apache.flink.api.common.typeinfo.TypeInformation
+import java.io.{ByteArrayOutputStream, FileInputStream}
 
-class TelegramMessageSerializationSchema extends DeserializationSchema[TelegramMessage] {
+class TelegramMessageSerializationSchema extends DeserializationSchema[TelegramMessage] with SerializationSchema[TelegramMessage] {
+
+  override def serialize(message: TelegramMessage): Array[Byte] = {
+       val writer = new SpecificDatumWriter[TelegramMessage](classOf[TelegramMessage])
+       val out = new ByteArrayOutputStream()
+       val encoder = EncoderFactory.get.binaryEncoder(out, null)
+       writer.write(message, encoder)
+       encoder.flush()
+       out.toByteArray
+  }
+
   override def deserialize(bytes: Array[Byte]): TelegramMessage = {
     println("deserialize: " + bytes.length)
     val reader = new SpecificDatumReader[TelegramMessage](classOf[TelegramMessage])
@@ -46,6 +57,7 @@ class TelegramMessageSerializationSchema extends DeserializationSchema[TelegramM
     TypeInformation.of(classOf[TelegramMessage])
   }
 }
+
 object KafkaAvroStreaming {
   def main(args: Array[String])
   {
@@ -53,13 +65,21 @@ object KafkaAvroStreaming {
     val env = StreamExecutionEnvironment.getExecutionEnvironment
 
     val properties = new Properties()
-    properties.setProperty("bootstrap.servers", "34.87.113.63:9092")
+    properties.setProperty("bootstrap.servers", "localhost:9092")
     properties.setProperty("group.id", "test")
 
     val stream = env
         .addSource(new FlinkKafkaConsumer[TelegramMessage]("telegram", new TelegramMessageSerializationSchema(), properties))
-        // .map(x => x.getMessage)
-        .print()
+        .map(x => new TelegramMessage(x.getViewtime, x.getUsername, x.getMessage + "=> transform", x.getChatId, x.getMessageId))
+
+    stream.print()   
+    
+    val sink = new FlinkKafkaProducer(
+        "localhost:9092",            // broker list
+        "tele-log",                  // target topic
+        new TelegramMessageSerializationSchema());   // serialization schema
+
+    stream.addSink(sink)
 
     env.execute("Flink Telegram Analytics")
   }
